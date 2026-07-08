@@ -1,0 +1,135 @@
+.profile-container {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 0 20px;
+  font-family: "Inter", sans-serif;
+}
+.profile-header {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  padding-bottom: 20px;
+}
+.profile-cover {
+  height: 140px;
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+}
+.profile-info-bar {
+  display: flex;
+  align-items: flex-end;
+  padding: 0 30px;
+  margin-top: -50px;
+  gap: 20px;
+}
+.profile-avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 4px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+}
+.profile-meta {
+  flex: 1;
+}
+.profile-meta h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #0f172a;
+}
+.profile-meta p {
+  margin: 4px 0 0 0;
+  color: #64748b;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.profile-bio {
+  padding: 20px 30px 0 30px;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.logout-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.profile-tabs {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid #e2e8f0;
+  margin: 25px 0;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 10px 15px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+.tab-btn.active {
+  color: #0284c7;
+}
+.tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #0284c7;
+}
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+.list-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.custom-card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  font-weight: 600;
+  color: #0f172a;
+}
+.status-badge {
+  float: right;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+.status-badge.in-progress {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.status-badge.completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+.post-date {
+  font-size: 11px;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 4px;
+}

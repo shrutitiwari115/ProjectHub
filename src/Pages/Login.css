@@ -1,0 +1,270 @@
+.synopsis-login-viewport {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--bg-main, #f0f7fa);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+}
+
+/* Ambient glow system using your theme colors */
+.login-glow-node {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 1;
+  opacity: 0.5;
+}
+.glow-sky {
+  top: -10%;
+  left: -10%;
+  width: 400px;
+  height: 400px;
+  background-color: #00a4e4;
+}
+.glow-pista {
+  bottom: -10%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+  background-color: #60c9a4;
+}
+
+/* 2. Login Card Box */
+.github-login-card {
+  background-color: #ffffff;
+  border: 1px solid #bcdde6;
+  padding: 40px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+  position: relative;
+}
+
+/* 3. Header & Branding */
+.login-brand-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+.login-logo-cube {
+  width: 48px;
+  height: 48px;
+  background-color: #e6f3f0;
+  border: 1px solid #60c9a4;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+}
+.cube-terminal-ico {
+  color: #00a4e4; /* Sky Blue */
+  font-size: 20px;
+}
+.login-brand-header h2 {
+  font-size: 24px;
+  color: #1a2a36;
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+.login-subtext-meta {
+  color: #5c7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 4. Form inputs & Fields */
+.login-integrated-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.login-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.field-meta-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2a3b47;
+}
+.password-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.editor-forgot-anchor {
+  font-size: 13px;
+  color: #00a4e4;
+  text-decoration: none;
+  font-weight: 500;
+}
+.editor-forgot-anchor:hover {
+  text-decoration: underline;
+}
+
+/* Input Wrapper & Icon inside Input */
+.editor-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.editor-field-ico {
+  position: absolute;
+  left: 14px;
+  color: #5c7280;
+  font-size: 16px;
+}
+.editor-input-wrapper input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  border: 1px solid #bcdde6;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #f4f9f9;
+  color: #2a3b47;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+.editor-input-wrapper input:focus {
+  outline: none;
+  border-color: #00a4e4;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 164, 228, 0.15);
+}
+
+/* Checkbox alignment */
+.login-retaining-row {
+  display: flex;
+  align-items: center;
+}
+.retaining-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #5c7280;
+}
+.retaining-checkbox-label input {
+  accent-color: #60c9a4;
+  width: 16px;
+  height: 16px;
+}
+
+/* 5. Primary Submit Button */
+.github-primary-submit-btn {
+  background-color: #60c9a4; /* Pista Green */
+  color: #1a2a36;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+.github-primary-submit-btn:hover:not(:disabled) {
+  background-color: #4bb38f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(96, 201, 164, 0.3);
+}
+.github-primary-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 6. Terminal Error Messages */
+.login-terminal-error {
+  background-color: #1a2a36;
+  color: #f0f7fa;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 13px;
+  margin-bottom: 20px;
+  border-left: 4px solid #ff6b6b;
+}
+.err-accent {
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
+/* 7. Divider & OAuth Buttons Grid */
+.login-horizontal-divider {
+  text-align: center;
+  margin: 24px 0;
+  position: relative;
+}
+.login-horizontal-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: #bcdde6;
+  z-index: 1;
+}
+.login-horizontal-divider span {
+  background-color: #ffffff;
+  padding: 0 12px;
+  font-size: 12px;
+  color: #5c7280;
+  position: relative;
+  z-index: 2;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.social-oauth-flex-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #ffffff;
+  border: 1px solid #bcdde6;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2a3b47;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.oauth-btn:hover {
+  background-color: #e6f3f0;
+  border-color: #60c9a4;
+}
+.oauth-ico {
+  font-size: 16px;
+}
+
+/* 8. Footer Link Redirect */
+.login-redirection-footer {
+  text-align: center;
+  font-size: 14px;
+  color: #5c7280;
+  margin-top: 20px;
+}
+.login-redirection-footer a {
+  color: #00a4e4;
+  text-decoration: none;
+  font-weight: 600;
+}
+.login-redirection-footer a:hover {
+  text-decoration: underline;
+}
