@@ -1,693 +1,415 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import "./Navbar.css";
+import React, { useState, useRef, useEffect, useContext } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../Pages/AuthContext";
 import {
-  FaTerminal,
-  FaChevronDown,
-  FaSearch,
-  FaBell,
-  FaMoon,
-  FaSun,
-  FaGlobe,
-  FaProjectDiagram,
-  FaTasks,
-  FaUsers,
-  FaFolderOpen,
-  FaBrain,
-  FaChartBar,
-  FaPlus,
-  FaUser,
-  FaCog,
-  FaSignOutAlt,
-  FaBars,
-  FaTimes,
-  FaHome,
-  FaCode,
-  FaGraduationCap,
-  FaRocket,
-  FaBuilding,
-  FaGithub,
-  FaSlack,
-  FaGoogleDrive,
-  FaMicrosoft,
-  FaCloud,
-  FaBook,
-  FaQuestionCircle,
-} from "react-icons/fa";
+  FolderKanban,
+  KanbanSquare,
+  CheckSquare,
+  Users,
+  BarChart3,
+  Search,
+  Plus,
+  Bell,
+  UserCircle,
+  X,
+  Menu,
+} from "lucide-react";
+import "./Navbar.css";
 
-function Navbar() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const profileRef = useRef(null);
-
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    () => !!localStorage.getItem("token"),
-  );
-  const [userData, setUserData] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("user")) || null;
-    } catch {
-      return null;
-    }
-  });
-
-  const [scrolled, setScrolled] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileDropdown, setProfileDropdown] = useState(false);
+const Navbar = () => {
+  const { user, isAuthenticated, logout } = useContext(AuthContext);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [createDropdownOpen, setCreateDropdownOpen] = useState(false);
+  const [notificationDropdownOpen, setNotificationDropdownOpen] =
+    useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Sync auth and user data on location change
-  useEffect(() => {
-    setIsAuthenticated(!!localStorage.getItem("token"));
-    try {
-      setUserData(JSON.parse(localStorage.getItem("user")) || null);
-    } catch (e) {
-      setUserData(null);
-    }
-  }, [location]);
+  const profileRef = useRef(null);
+  const createRef = useRef(null);
+  const notificationRef = useRef(null);
+  const searchRef = useRef(null);
+  const navigate = useNavigate();
 
-  // Scroll handler for sticky glassmorphism effect
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 15);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Keyboard shortcut (Ctrl + K / Cmd + K) for search
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        document.getElementById("nav-global-search")?.focus();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  // Close dropdown when clicking outside
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setProfileDropdown(false);
+        setProfileDropdownOpen(false);
+      }
+      if (createRef.current && !createRef.current.contains(event.target)) {
+        setCreateDropdownOpen(false);
+      }
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setNotificationDropdownOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setSearchOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    document.body.classList.toggle("dark-theme-active");
-  };
-
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setIsAuthenticated(false);
-    setUserData(null);
-    setProfileDropdown(false);
-    navigate("/login");
+    setProfileDropdownOpen(false);
+    logout();
+    navigate("/");
   };
 
-  const currentActive = (path) =>
-    location.pathname === path ? "active-node" : "";
+  const getInitials = (name) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
-  // Smooth scroll handler for landing page anchors
-  const handleAnchorClick = (e, targetId) => {
-    if (location.pathname === "/home" || location.pathname === "/") {
-      e.preventDefault();
-      const element = document.getElementById(targetId);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
-      }
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/projects?search=${encodeURIComponent(searchQuery)}`);
+      setSearchOpen(false);
     }
-    setMobileMenuOpen(false);
   };
 
   return (
-    <nav
-      className={`premium-nav-shell sticky-navbar ${scrolled ? "shell-scrolled glassmorphism" : ""} ${
-        isDarkMode ? "dark-shell" : ""
-      }`}
-    >
-      <div className="nav-macro-container">
-        {/* LEFT BRANDING */}
-        <div className="nav-branding-zone">
-          <Link
-            to="/home"
-            onClick={(e) => handleAnchorClick(e, "hero")}
-            className="brand-logo-anchor"
+    <nav className="navbar">
+      {/* Left Side: Logo - ProjectHub clicks to Hero.jsx ("/") */}
+      <div className="navbar-brand">
+        <Link to="/" className="logo-container">
+          <FolderKanban className="logo-icon" size={24} />
+          <span className="logo-text">ProjectHub</span>
+        </Link>
+      </div>
+
+      {/* Center Navigation */}
+      <ul className={`nav-links ${mobileMenuOpen ? "mobile-open" : ""}`}>
+        {!isAuthenticated ? (
+          <>
+            <li>
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) => (isActive ? "active-link" : "")}
+              >
+                Home
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/about"
+                className={({ isActive }) => (isActive ? "active-link" : "")}
+              >
+                About
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/features"
+                className={({ isActive }) => (isActive ? "active-link" : "")}
+              >
+                Features
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/pricing"
+                className={({ isActive }) => (isActive ? "active-link" : "")}
+              >
+                Pricing
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/contact"
+                className={({ isActive }) => (isActive ? "active-link" : "")}
+              >
+                Contact
+              </NavLink>
+            </li>
+          </>
+        ) : (
+          <>
+            <li>
+              <NavLink
+                to="/dashboard"
+                className={({ isActive }) => (isActive ? "active-link" : "")}
+              >
+                <span>Dashboard</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/projects"
+                className={({ isActive }) => (isActive ? "active-link" : "")}
+              >
+                <FolderKanban className="nav-icon" size={18} />
+                <span>Projects</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/kanban"
+                className={({ isActive }) => (isActive ? "active-link" : "")}
+              >
+                <KanbanSquare className="nav-icon" size={18} />
+                <span>Kanban</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/tasks"
+                className={({ isActive }) => (isActive ? "active-link" : "")}
+              >
+                <CheckSquare className="nav-icon" size={18} />
+                <span>Tasks</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/team"
+                className={({ isActive }) => (isActive ? "active-link" : "")}
+              >
+                <Users className="nav-icon" size={18} />
+                <span>Team</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/analytics"
+                className={({ isActive }) => (isActive ? "active-link" : "")}
+              >
+                <BarChart3 className="nav-icon" size={18} />
+                <span>Analytics</span>
+              </NavLink>
+            </li>
+          </>
+        )}
+      </ul>
+
+      {/* Right Side Actions */}
+      <div className="navbar-actions">
+        {!isAuthenticated ? (
+          <div
+            className="auth-buttons"
+            style={{ display: "flex", gap: "12px", alignItems: "center" }}
           >
-            <div className="brand-cube-matrix">
-              <FaTerminal className="matrix-icon-core" />
-            </div>
-            <span className="brand-text-string">ProjectHub</span>
-          </Link>
-          {isAuthenticated && (
-            <span className="internal-node-tag">Workspace v2</span>
-          )}
-        </div>
-
-        {/* CENTER NAVIGATION */}
-        <div
-          className={`nav-routing-center ${
-            mobileMenuOpen ? "mobile-drawer-active" : ""
-          }`}
-        >
-          {!isAuthenticated ? (
-            <ul className="marketing-nav-list">
-              <li>
-                <Link
-                  to="/home"
-                  onClick={(e) => handleAnchorClick(e, "hero")}
-                  className={`marketing-link home-icon-link smooth-underline ${currentActive("/home")}`}
-                  title="Home"
-                >
-                  <FaHome
-                    style={{ fontSize: "1.2rem", verticalAlign: "middle" }}
-                  />{" "}
-                  <span className="mobile-only-text">Home</span>
-                </Link>
-              </li>
-
-              {/* FEATURES DROPDOWN */}
-              <li
-                className="dropdown-trigger-node"
-                onMouseEnter={() => setActiveDropdown("features")}
-                onMouseLeave={() => setActiveDropdown(null)}
-              >
-                <span className="marketing-link smooth-underline style-clickable-span">
-                  Features <FaChevronDown className="chevron-mini" />
-                </span>
-                <div
-                  className={`mega-dropdown-grid ${
-                    activeDropdown === "features" ? "grid-visible" : ""
-                  }`}
-                >
-                  <Link
-                    to="/features/pm"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaProjectDiagram className="drop-ico pm" />{" "}
-                    <div>
-                      <h4>Project Management</h4>
-                      <p>Track high-level lifecycles & configurations.</p>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/features/tasks"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaTasks className="drop-ico task" />{" "}
-                    <div>
-                      <h4>Task Management</h4>
-                      <p>Kanban & automation architecture.</p>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/features/team"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaUsers className="drop-ico team" />{" "}
-                    <div>
-                      <h4>Team Collaboration</h4>
-                      <p>Real-time node collaboration.</p>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/features/files"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaFolderOpen className="drop-ico file" />{" "}
-                    <div>
-                      <h4>File Sharing</h4>
-                      <p>Encrypted data repository.</p>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/features/ai"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaBrain className="drop-ico ai" />{" "}
-                    <div>
-                      <h4>AI Assistant</h4>
-                      <p>Autonomous summary pipelines.</p>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/features/analytics"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaChartBar className="drop-ico analytics" />{" "}
-                    <div>
-                      <h4>Analytics Dashboard</h4>
-                      <p>Deep performance metrics.</p>
-                    </div>
-                  </Link>
-                </div>
-              </li>
-
-              <li
-                className="dropdown-trigger-node"
-                onMouseEnter={() => setActiveDropdown("solutions")}
-                onMouseLeave={() => setActiveDropdown(null)}
-              >
-                <span className="marketing-link smooth-underline">
-                  Solutions <FaChevronDown className="chevron-mini" />
-                </span>
-                <div
-                  className={`mega-dropdown-grid mini-grid ${
-                    activeDropdown === "solutions" ? "grid-visible" : ""
-                  }`}
-                >
-                  <Link
-                    to="/solutions/students"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaGraduationCap className="drop-ico solutions-ico" />
-                    <div>
-                      <h4>Students</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/solutions/developers"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaCode className="drop-ico solutions-ico" />
-                    <div>
-                      <h4>Developers</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/solutions/startups"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaRocket className="drop-ico solutions-ico" />
-                    <div>
-                      <h4>Startups</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/solutions/companies"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaBuilding className="drop-ico solutions-ico" />
-                    <div>
-                      <h4>Companies</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/solutions/colleges"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaBuilding className="drop-ico solutions-ico" />
-                    <div>
-                      <h4>Colleges</h4>
-                    </div>
-                  </Link>
-                </div>
-              </li>
-
-              {/* INTEGRATIONS MEGA DROPDOWN */}
-              <li
-                className="dropdown-trigger-node"
-                onMouseEnter={() => setActiveDropdown("integrations")}
-                onMouseLeave={() => setActiveDropdown(null)}
-              >
-                <span className="marketing-link smooth-underline">
-                  Integrations <FaChevronDown className="chevron-mini" />
-                </span>
-                <div
-                  className={`mega-dropdown-grid mini-grid ${
-                    activeDropdown === "integrations" ? "grid-visible" : ""
-                  }`}
-                >
-                  <Link
-                    to="/integrations/github"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaGithub className="drop-ico github-ico" />
-                    <div>
-                      <h4>GitHub</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/integrations/vscode"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaCode className="drop-ico vscode-ico" />
-                    <div>
-                      <h4>VS Code</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/integrations/gdrive"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaGoogleDrive className="drop-ico gdrive-ico" />
-                    <div>
-                      <h4>Google Drive</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/integrations/slack"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaSlack className="drop-ico slack-ico" />
-                    <div>
-                      <h4>Slack</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/integrations/teams"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaMicrosoft className="drop-ico teams-ico" />
-                    <div>
-                      <h4>Microsoft Teams</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/integrations/cloudinary"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaCloud className="drop-ico cloud-ico" />
-                    <div>
-                      <h4>Cloudinary</h4>
-                    </div>
-                  </Link>
-                </div>
-              </li>
-
-              {/* RESOURCES MEGA DROPDOWN */}
-              <li
-                className="dropdown-trigger-node"
-                onMouseEnter={() => setActiveDropdown("resources")}
-                onMouseLeave={() => setActiveDropdown(null)}
-              >
-                <span className="marketing-link smooth-underline">
-                  Resources <FaChevronDown className="chevron-mini" />
-                </span>
-                <div
-                  className={`mega-dropdown-grid mini-grid ${
-                    activeDropdown === "resources" ? "grid-visible" : ""
-                  }`}
-                >
-                  <Link
-                    to="/docs"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaBook className="drop-ico" />
-                    <div>
-                      <h4>Documentation</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/user-guide"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaBook className="drop-ico" />
-                    <div>
-                      <h4>User Guide</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/api-reference"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaCode className="drop-ico" />
-                    <div>
-                      <h4>API Reference</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/help"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaQuestionCircle className="drop-ico" />
-                    <div>
-                      <h4>Help Center</h4>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/blog"
-                    className="mega-item"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <FaChartBar className="drop-ico" />
-                    <div>
-                      <h4>Blog</h4>
-                    </div>
-                  </Link>
-                </div>
-              </li>
-
-              <li>
-                <Link
-                  to="/pricing"
-                  className="marketing-link smooth-underline"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Pricing
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/about"
-                  className="marketing-link smooth-underline"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  About
-                </Link>
-              </li>
-            </ul>
-          ) : (
-            <ul className="dashboard-nav-list">
-              <li>
-                <Link
-                  to="/dashboard"
-                  className={`dash-node-link smooth-underline ${currentActive("/dashboard")}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <FaTerminal /> <span>Dashboard</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/projects"
-                  className={`dash-node-link smooth-underline ${currentActive("/projects")}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <FaProjectDiagram /> <span>Projects</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/tasks"
-                  className={`dash-node-link smooth-underline ${currentActive("/tasks")}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <FaTasks /> <span>Tasks</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/teams"
-                  className={`dash-node-link smooth-underline ${currentActive("/teams")}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <FaUsers /> <span>Teams</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/files"
-                  className={`dash-node-link smooth-underline ${currentActive("/files")}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <FaFolderOpen /> <span>Files</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/ai-workspace"
-                  className={`dash-node-link smooth-underline ${currentActive("/ai-workspace")}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <FaBrain className="pulsing-purple-icon" />{" "}
-                  <span>AI Labs</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/analytics"
-                  className={`dash-node-link smooth-underline ${currentActive("/analytics")}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <FaChartBar /> <span>Analytics</span>
-                </Link>
-              </li>
-            </ul>
-          )}
-        </div>
-
-        {/* RIGHT UTILITIES & ACTIONS */}
-        <div className="nav-action-zone">
-          <div className="omni-search-container micro-search">
-            <FaSearch className="omni-search-embed-icon" />
-            <input
-              type="text"
-              id="nav-global-search"
-              placeholder="Search... (Ctrl+K)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <Link
+              to="/login"
+              className="btn-login"
+              style={{
+                padding: "8px 16px",
+                borderRadius: "6px",
+                fontWeight: "500",
+                textDecoration: "none",
+                color: "#333",
+                border: "1px solid #d1d5db",
+              }}
+            >
+              Login
+            </Link>
+            <Link
+              to="/signup"
+              className="btn-signup"
+              style={{
+                padding: "8px 16px",
+                borderRadius: "6px",
+                fontWeight: "500",
+                textDecoration: "none",
+                backgroundColor: "#2563eb",
+                color: "#fff",
+              }}
+            >
+              Sign up
+            </Link>
           </div>
-
-          <button
-            className="utility-circle-trigger"
-            onClick={toggleTheme}
-            title="Change Theme System"
-          >
-            {isDarkMode ? <FaSun className="sun-color" /> : <FaMoon />}
-          </button>
-
-          {!isAuthenticated ? (
-            <>
-              <button
-                className="utility-circle-trigger"
-                title="Select Localization Language"
-              >
-                <FaGlobe />
-              </button>
-              <Link
-                to="/login"
-                className="public-sign-in-anchor custom-outline-btn"
-              >
-                Sign in
-              </Link>
-              <Link
-                to="/signup"
-                className="public-sign-up-github-btn custom-gradient-btn"
-              >
-                Sign up
-              </Link>
-            </>
-          ) : (
-            <>
-              <button
-                className="dashboard-creation-node-btn"
-                title="Instantiate New Document Node"
-                onClick={() => navigate("/features/pm")}
-              >
-                <FaPlus /> <span>New Project</span>
-              </button>
-
-              <div className="system-notification-bell-cluster">
+        ) : (
+          <div className="authenticated-actions">
+            {/* Expandable Search */}
+            <div className="search-container" ref={searchRef}>
+              {searchOpen ? (
+                <form onSubmit={handleSearchSubmit} className="search-bar-form">
+                  <Search size={16} className="search-input-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search projects, tasks..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                    className="search-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSearchOpen(false)}
+                    className="search-close-btn"
+                  >
+                    <X size={14} />
+                  </button>
+                </form>
+              ) : (
                 <button
-                  className="utility-circle-trigger notification-active-bell"
-                  title="System Operational Logs"
+                  className="nav-action-btn"
+                  onClick={() => setSearchOpen(true)}
+                  title="Search"
                 >
-                  <FaBell />
-                  <span className="live-radar-ping-dot"></span>
+                  <Search size={18} />
                 </button>
-                <div className="notification-micro-toast-panel">
-                  <h5>Recent Notifications</h5>
-                  <div className="toast-item">
-                    <span className="task-dot"></span> Task deadline updated
+              )}
+            </div>
+
+            {/* Create Button with Dropdown */}
+            <div className="create-dropdown-container" ref={createRef}>
+              <button
+                className="nav-action-btn create-btn"
+                onClick={() => setCreateDropdownOpen((prev) => !prev)}
+                title="Create new..."
+              >
+                <Plus size={18} />
+              </button>
+
+              {createDropdownOpen && (
+                <div className="github-dropdown-menu create-menu">
+                  <Link
+                    to="/projects/new"
+                    onClick={() => setCreateDropdownOpen(false)}
+                  >
+                    New Project
+                  </Link>
+                  <Link
+                    to="/tasks/new"
+                    onClick={() => setCreateDropdownOpen(false)}
+                  >
+                    New Task
+                  </Link>
+                  <Link
+                    to="/team/invite"
+                    onClick={() => setCreateDropdownOpen(false)}
+                  >
+                    Invite Member
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Notification Bell */}
+            <div className="notification-container" ref={notificationRef}>
+              <button
+                className="nav-action-btn notification-bell-btn"
+                onClick={() => setNotificationDropdownOpen((prev) => !prev)}
+                title="Notifications"
+              >
+                <Bell size={18} />
+                <span className="unread-badge"></span>
+              </button>
+
+              {notificationDropdownOpen && (
+                <div className="github-dropdown-menu notification-menu">
+                  <div className="dropdown-header">
+                    <p className="dropdown-user-name">Notifications</p>
                   </div>
-                  <div className="toast-item">
-                    <span className="invite-dot"></span> Team architecture
-                    invite received
+                  <hr />
+                  <div className="notification-item">
+                    <p className="notif-title">New task assigned</p>
+                    <p className="notif-time">2 minutes ago</p>
+                  </div>
+                  <div className="notification-item">
+                    <p className="notif-title">Project update posted</p>
+                    <p className="notif-time">1 hour ago</p>
                   </div>
                 </div>
-              </div>
+              )}
+            </div>
 
-              {/* Profile Dropdown */}
-              <div className="app-profile-dropdown-container" ref={profileRef}>
-                <button
-                  className="profile-capsule-trigger"
-                  onClick={() => setProfileDropdown(!profileDropdown)}
-                >
+            {/* User Avatar with Dropdown */}
+            <div className="profile-dropdown-container" ref={profileRef}>
+              <button
+                className="avatar-btn"
+                onClick={() => setProfileDropdownOpen((prev) => !prev)}
+              >
+                {user?.profileImage ? (
                   <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                    alt="Avatar Node"
+                    src={user.profileImage}
+                    alt={user.fullName || "User"}
+                    className="user-avatar"
                   />
-                  <FaChevronDown
-                    className={`profile-chevron-arrow ${
-                      profileDropdown ? "rotated-state" : ""
-                    }`}
-                  />
-                </button>
-
-                {profileDropdown && (
-                  <div className="app-profile-floating-overlay">
-                    <div className="profile-overlay-meta-block">
-                      <h4>{userData?.name || "Amrita Sharma"}</h4>
-                      <p>{userData?.email || "amrita@projecthub.dev"}</p>
-                    </div>
-                    <div className="overlay-divider-line"></div>
-                    <Link
-                      to="/profile"
-                      className="overlay-navigation-node"
-                      onClick={() => setProfileDropdown(false)}
-                    >
-                      <FaUser /> Your Profile
-                    </Link>
-                    <Link
-                      to="/settings"
-                      className="overlay-navigation-node"
-                      onClick={() => setProfileDropdown(false)}
-                    >
-                      <FaCog /> Configuration
-                    </Link>
-                    <div className="overlay-divider-line"></div>
-                    <button
-                      onClick={handleLogout}
-                      className="overlay-navigation-node systems-exit-trigger"
-                    >
-                      <FaSignOutAlt /> Terminate Session
-                    </button>
+                ) : (
+                  <div className="avatar-placeholder">
+                    {getInitials(user?.fullName || user?.username)}
                   </div>
                 )}
-              </div>
-            </>
-          )}
+              </button>
 
-          <button
-            className="nav-mobile-hamburger-toggle"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <FaTimes /> : <FaBars />}
-          </button>
-        </div>
+              {profileDropdownOpen && (
+                <div className="github-dropdown-menu profile-menu">
+                  <div className="dropdown-header">
+                    <p className="dropdown-user-name">
+                      {user?.fullName || "ProjectHub User"}
+                    </p>
+                    <p className="dropdown-username">
+                      @{user?.username || "user"}
+                    </p>
+                  </div>
+                  <hr />
+                  <Link
+                    to="/profile"
+                    onClick={() => setProfileDropdownOpen(false)}
+                  >
+                    My Profile
+                  </Link>
+                  <Link
+                    to="/edit-profile"
+                    onClick={() => setProfileDropdownOpen(false)}
+                  >
+                    Edit Profile
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setProfileDropdownOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    to="/projects"
+                    onClick={() => setProfileDropdownOpen(false)}
+                  >
+                    Projects
+                  </Link>
+                  <Link
+                    to="/settings"
+                    onClick={() => setProfileDropdownOpen(false)}
+                  >
+                    Settings
+                  </Link>
+                  <hr />
+                  <button
+                    onClick={handleLogout}
+                    className="dropdown-logout-btn"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Menu Toggle */}
+        <button
+          className="mobile-menu-toggle"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
       </div>
     </nav>
   );
-}
+};
 
 export default Navbar;

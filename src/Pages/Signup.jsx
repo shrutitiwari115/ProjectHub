@@ -1,422 +1,363 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
-  FaUser,
-  FaAt,
-  FaEnvelope,
-  FaPhone,
-  FaLock,
-  FaEye,
-  FaEyeSlash,
-  FaGoogle,
-  FaGithub,
-  FaMicrosoft,
-  FaCheckCircle,
-  FaArrowRight,
-} from "react-icons/fa";
+  FiMail,
+  FiLock,
+  FiUser,
+  FiEye,
+  FiEyeOff,
+  FiArrowRight,
+  FiAlertCircle,
+  FiUsers,
+  FiGrid,
+} from "react-icons/fi";
+import { FcGoogle } from "react-icons/fc";
+import { useAuth } from "./AuthContext";
 import "./Signup.css";
 
 const Signup = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [formData, setFormData] = useState({
     name: "",
-    username: "",
     email: "",
-    mobile: "",
     password: "",
     confirmPassword: "",
-    role: "Student",
     agreeTerms: false,
-    agreePrivacy: false,
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState({
-    score: 0,
-    label: "Too Weak",
-    color: "#ef4444",
-  });
-  const [usernameStatus, setUsernameStatus] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const {
-    name,
-    username,
-    email,
-    mobile,
-    password,
-    confirmPassword,
-    role,
-    agreeTerms,
-    agreePrivacy,
-  } = formData;
+  const [serverError, setServerError] = useState("");
+  const [errors, setFormErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
-    });
+    }));
+
+    if (errors[name]) {
+      setFormErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+    if (serverError) setServerError("");
   };
 
-  // Real-time Username Availability Check Simulation
-  useEffect(() => {
-    if (username.length > 2) {
-      setUsernameStatus("checking");
-      const delay = setTimeout(() => {
-        if (
-          username.toLowerCase() === "admin" ||
-          username.toLowerCase() === "test"
-        ) {
-          setUsernameStatus("taken");
-        } else {
-          setUsernameStatus("available");
-        }
-      }, 500);
-      return () => clearTimeout(delay);
-    } else {
-      setUsernameStatus("");
+  const validate = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Full name is required";
     }
-  }, [username]);
 
-  // Real-time Password Strength Check
-  useEffect(() => {
-    if (!password) {
-      setPasswordStrength({ score: 0, label: "Too Weak", color: "#ef4444" });
-      return;
+    if (!formData.email.trim()) {
+      newErrors.email = "Email address is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
     }
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
 
-    if (score <= 1)
-      setPasswordStrength({ score: 25, label: "Weak", color: "#ef4444" });
-    else if (score === 2)
-      setPasswordStrength({ score: 50, label: "Medium", color: "#f59e0b" });
-    else if (score === 3)
-      setPasswordStrength({ score: 75, label: "Good", color: "#3b82f6" });
-    else setPasswordStrength({ score: 100, label: "Strong", color: "#10b981" });
-  }, [password]);
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters long";
+    }
 
-  const handleSubmit = (e) => {
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    if (!formData.agreeTerms) {
+      newErrors.agreeTerms = "You must accept the terms and conditions";
+    }
+
+    setFormErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-
-    if (usernameStatus === "taken") {
-      setError("Username already taken. Please choose another one.");
-      return;
-    }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-    if (!agreeTerms || !agreePrivacy) {
-      setError("You must agree to both Terms and Privacy Policy.");
-      return;
-    }
+    if (!validate()) return;
 
     setLoading(true);
+    setServerError("");
 
-    setTimeout(() => {
-      const newUser = { name, username, email, mobile, role, password };
-      localStorage.setItem(`registered_user_${email}`, JSON.stringify(newUser));
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/register",
+        {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+        },
+      );
+
+      const token = response.data.token || response.data.accessToken;
+      const user =
+        response.data.user || response.data.userData || response.data.data;
+
+      if (token) {
+        if (login) {
+          login(token, user);
+        } else {
+          localStorage.setItem("token", token);
+        }
+        navigate("/dashboard");
+      } else {
+        navigate("/login");
+      }
+    } catch (err) {
+      console.error("Signup Error Details:", err.response?.data || err.message);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Registration failed. Please try again.";
+
+      setServerError(errorMessage);
+    } finally {
       setLoading(false);
-      setSuccess(true);
-    }, 1500);
+    }
   };
 
-  if (success) {
-    return (
-      <div className="signup-page-wrapper">
-        <div className="success-card">
-          <div className="success-icon-animated">🎉</div>
-          <h2>Welcome to ProjectHub</h2>
-          <p>Your account has been created successfully.</p>
-          <button
-            className="dashboard-btn"
-            onClick={() => navigate("/dashboard")}
-          >
-            Go to Dashboard <FaArrowRight style={{ marginLeft: "8px" }} />
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const handleGoogleSignup = () => {
+    window.location.href = "http://localhost:5000/api/auth/google";
+  };
 
   return (
-    <div className="signup-page-wrapper">
-      <div className="signup-container">
-        {/* LEFT SIDE: Features Preview */}
-        <div className="signup-left">
-          <div className="brand-header">
-            <div className="logo-placeholder">⚙️</div>
-            <h1>ProjectHub</h1>
+    <div className="ph-signup-container">
+      {/* LEFT SECTION */}
+      <div className="ph-signup-left">
+        {/* Hero Title (Shifted to top & sized smaller) */}
+        <h1 className="ph-hero-title">
+          Build Better.
+          <br />
+          Collaborate Smarter.
+          <br />
+          <span className="ph-highlight">Deliver Faster.</span>
+        </h1>
+
+        <p className="ph-hero-description">
+          ProjectHub helps teams plan, manage, and collaborate in one place — so
+          you can ship better software, faster.
+        </p>
+
+        {/* Feature List */}
+        <div className="ph-features-list">
+          <div className="ph-feature-item">
+            <div className="ph-feature-icon icon-blue">
+              <FiUsers />
+            </div>
+            <div>
+              <h3>Real-time Collaboration</h3>
+              <p>
+                Work together with your team in real-time and get more done.
+              </p>
+            </div>
           </div>
-          <div className="hero-content">
-            <h2>Welcome to ProjectHub</h2>
-            <p>
-              Create projects, collaborate with your team, track progress and
-              build software smarter.
-            </p>
+
+          <div className="ph-feature-item">
+            <div className="ph-feature-icon icon-blue">
+              <FiLock />
+            </div>
+            <div>
+              <h3>Secure & Encrypted</h3>
+              <p>
+                Your data is protected with end-to-end encryption and
+                enterprise-grade security.
+              </p>
+            </div>
           </div>
-          <ul className="features-list">
-            <li>
-              <FaCheckCircle className="chk-icon" /> AI Powered Workspace
-            </li>
-            <li>
-              <FaCheckCircle className="chk-icon" /> Real-time Collaboration
-            </li>
-            <li>
-              <FaCheckCircle className="chk-icon" /> Secure Cloud Storage
-            </li>
-            <li>
-              <FaCheckCircle className="chk-icon" /> Project Analytics
-            </li>
-            <li>
-              <FaCheckCircle className="chk-icon" /> Team Management
-            </li>
-            <li>
-              <FaCheckCircle className="chk-icon" /> GitHub Integration
-            </li>
-          </ul>
+
+          <div className="ph-feature-item">
+            <div className="ph-feature-icon icon-blue">
+              <FiGrid />
+            </div>
+            <div>
+              <h3>All-in-One Workspace</h3>
+              <p>Manage projects, tasks, files, and more from one place.</p>
+            </div>
+          </div>
         </div>
 
-        {/* RIGHT SIDE: Interactive Signup Form */}
-        <div className="signup-right">
-          <h2>Create Your Account</h2>
-          {error && <div className="error-banner">{error}</div>}
+        {/* Bottom Background Image Overlay */}
+        <div className="ph-hero-bg-image" />
+      </div>
+
+      {/* RIGHT SECTION - FORM CARD */}
+      <div className="ph-signup-right">
+        <div className="ph-card">
+          <div className="ph-card-header">
+            <h2>Create an account</h2>
+            <p>Enter your details to get started with ProjectHub.</p>
+          </div>
+
+          {serverError && (
+            <div className="ph-error-banner">
+              <FiAlertCircle className="err-icon" />
+              <span>{serverError}</span>
+            </div>
+          )}
+
+          {/* SSO Google Button */}
+          <button
+            type="button"
+            className="ph-btn-sso"
+            onClick={handleGoogleSignup}
+          >
+            <FcGoogle className="sso-icon" />
+            <span>Sign up with Google</span>
+          </button>
+
+          <div className="ph-divider">
+            <span>OR SIGN UP WITH EMAIL</span>
+          </div>
 
           <form onSubmit={handleSubmit} noValidate>
             {/* Full Name */}
-            <div className="form-group-float">
-              <input
-                type="text"
-                name="name"
-                value={name}
-                onChange={handleChange}
-                required
-                placeholder=" "
-                id="fullName"
-              />
-              <label htmlFor="fullName">
-                <FaUser className="form-icon" /> Full Name
-              </label>
-            </div>
-
-            {/* Username */}
-            <div className="form-group-float">
-              <input
-                type="text"
-                name="username"
-                value={username}
-                onChange={handleChange}
-                required
-                placeholder=" "
-                id="username"
-              />
-              <label htmlFor="username">
-                <FaAt className="form-icon" /> Username
-              </label>
-              <small className="hint-text">
-                {usernameStatus === "checking" && (
-                  <span className="text-gray">Checking availability...</span>
-                )}
-                {usernameStatus === "available" && (
-                  <span className="text-success">✔ Username is available</span>
-                )}
-                {usernameStatus === "taken" && (
-                  <span className="text-danger">
-                    ✖ Username unique hona chahiye.
-                  </span>
-                )}
-                {!usernameStatus && "Username unique hona chahiye."}
-              </small>
+            <div className="ph-form-group">
+              <label htmlFor="name">Full Name</label>
+              <div
+                className={`ph-input-wrapper ${errors.name ? "has-error" : ""}`}
+              >
+                <FiUser className="ph-input-icon" />
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  placeholder="John Doe"
+                  value={formData.name}
+                  onChange={handleChange}
+                />
+              </div>
+              {errors.name && (
+                <span className="ph-field-error">{errors.name}</span>
+              )}
             </div>
 
             {/* Email */}
-            <div className="form-group-float">
-              <input
-                type="email"
-                name="email"
-                value={email}
-                onChange={handleChange}
-                required
-                placeholder=" "
-                id="email"
-              />
-              <label htmlFor="email">
-                <FaEnvelope className="form-icon" /> Email Address
-              </label>
-            </div>
-
-            {/* Mobile Number */}
-            <div className="form-group-float">
-              <input
-                type="tel"
-                name="mobile"
-                value={mobile}
-                onChange={handleChange}
-                placeholder=" "
-                id="mobile"
-              />
-              <label htmlFor="mobile">
-                <FaPhone className="form-icon" /> Mobile Number (Optional)
-              </label>
+            <div className="ph-form-group">
+              <label htmlFor="email">Email address</label>
+              <div
+                className={`ph-input-wrapper ${errors.email ? "has-error" : ""}`}
+              >
+                <FiMail className="ph-input-icon" />
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="name@company.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  autoComplete="email"
+                />
+              </div>
+              {errors.email && (
+                <span className="ph-field-error">{errors.email}</span>
+              )}
             </div>
 
             {/* Password */}
-            <div className="form-group-float pass-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={password}
-                onChange={handleChange}
-                required
-                placeholder=" "
-                id="password"
-              />
-              <label htmlFor="password">
-                <FaLock className="form-icon" /> Password
-              </label>
-              <button
-                type="button"
-                className="toggle-pass-btn"
-                onClick={() => setShowPassword(!showPassword)}
+            <div className="ph-form-group">
+              <label htmlFor="password">Password</label>
+              <div
+                className={`ph-input-wrapper ${errors.password ? "has-error" : ""}`}
               >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
-
-              {/* Password Strength Meter */}
-              {password && (
-                <div className="strength-meter-container">
-                  <div className="meter-bar-bg">
-                    <div
-                      className="meter-bar-fill"
-                      style={{
-                        width: `${passwordStrength.score}%`,
-                        backgroundColor: passwordStrength.color,
-                      }}
-                    ></div>
-                  </div>
-                  <span
-                    className="strength-label"
-                    style={{ color: passwordStrength.color }}
-                  >
-                    {passwordStrength.label} (Min 8 chars)
-                  </span>
-                </div>
+                <FiLock className="ph-input-icon" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+                <button
+                  type="button"
+                  className="ph-toggle-pwd"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                </button>
+              </div>
+              {errors.password && (
+                <span className="ph-field-error">{errors.password}</span>
               )}
             </div>
 
             {/* Confirm Password */}
-            <div className="form-group-float">
-              <input
-                type="password"
-                name="confirmPassword"
-                value={confirmPassword}
-                onChange={handleChange}
-                required
-                placeholder=" "
-                id="confirmPassword"
-              />
-              <label htmlFor="confirmPassword">
-                <FaLock className="form-icon" /> Confirm Password
-              </label>
-            </div>
-
-            {/* Role Selection */}
-            <div className="role-section">
-              <p className="section-label">I am a:</p>
-              <div className="role-grid">
-                {[
-                  "Student",
-                  "Developer",
-                  "Team Leader",
-                  "Freelancer",
-                  "Teacher",
-                  "Organization",
-                ].map((r) => (
-                  <label
-                    key={r}
-                    className={`role-card-label ${role === r ? "active" : ""}`}
-                  >
-                    <input
-                      type="radio"
-                      name="role"
-                      value={r}
-                      checked={role === r}
-                      onChange={handleChange}
-                    />
-                    <span>{r}</span>
-                  </label>
-                ))}
+            <div className="ph-form-group">
+              <label htmlFor="confirmPassword">Confirm Password</label>
+              <div
+                className={`ph-input-wrapper ${errors.confirmPassword ? "has-error" : ""}`}
+              >
+                <FiLock className="ph-input-icon" />
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                />
+                <button
+                  type="button"
+                  className="ph-toggle-pwd"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label="Toggle confirm password visibility"
+                >
+                  {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                </button>
               </div>
-              <small className="hint-text">
-                Role ke hisaab se dashboard personalize ho sakta hai.
-              </small>
+              {errors.confirmPassword && (
+                <span className="ph-field-error">{errors.confirmPassword}</span>
+              )}
             </div>
 
-            {/* Terms and Privacy */}
-            <div className="checkbox-group">
-              <label className="checkbox-custom">
+            {/* Terms Checkbox */}
+            <div className="ph-form-options">
+              <label className="ph-checkbox-label">
                 <input
                   type="checkbox"
                   name="agreeTerms"
-                  checked={agreeTerms}
+                  checked={formData.agreeTerms}
                   onChange={handleChange}
                 />
-                <span className="checkmark"></span>I agree to the Terms &
-                Conditions
-              </label>
-              <label className="checkbox-custom">
-                <input
-                  type="checkbox"
-                  name="agreePrivacy"
-                  checked={agreePrivacy}
-                  onChange={handleChange}
-                />
-                <span className="checkmark"></span>I agree to the Privacy Policy
+                <span>
+                  I agree to the <a href="#terms">Terms of Service</a> and{" "}
+                  <a href="#privacy">Privacy Policy</a>
+                </span>
               </label>
             </div>
+            {errors.agreeTerms && (
+              <span className="ph-field-error check-error">
+                {errors.agreeTerms}
+              </span>
+            )}
 
             {/* Submit Button */}
-            <button
-              type="submit"
-              className="signup-submit-btn"
-              disabled={loading}
-            >
-              {loading ? <div className="spinner"></div> : "Create Account"}
+            <button type="submit" className="ph-btn-primary" disabled={loading}>
+              {loading ? (
+                <span className="ph-btn-loader">Creating account...</span>
+              ) : (
+                <>
+                  <span>Create Account</span>
+                  <FiArrowRight />
+                </>
+              )}
             </button>
           </form>
 
-          <div className="form-divider">
-            <span>──────── OR ────────</span>
+          {/* Footer Link */}
+          <div className="ph-card-footer">
+            <span>Already have an account? </span>
+            <Link to="/login" className="ph-signup-link">
+              Sign in
+            </Link>
           </div>
-
-          {/* Social Signups */}
-          <div className="social-signup-stack">
-            <button className="social-stack-btn google">
-              <FaGoogle /> Continue with Google
-            </button>
-            <button className="social-stack-btn github">
-              <FaGithub /> Continue with GitHub
-            </button>
-            <button className="social-stack-btn microsoft">
-              <FaMicrosoft /> Continue with Microsoft
-            </button>
-          </div>
-
-          <p className="login-redirect-footer">
-            Already have an account? <Link to="/login">Login</Link>
-          </p>
         </div>
       </div>
     </div>
